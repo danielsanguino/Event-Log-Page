@@ -22,7 +22,7 @@ class _EventLogPageState extends State<EventLogPage> {
   }
 
   void _logEvent(String eventDescription, String time) async {
-    if (_userName == 'Anonymous') {
+    if (_userName.isEmpty || _userName == 'Anonymous') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please enter your name')),
       );
@@ -92,6 +92,101 @@ class _EventLogPageState extends State<EventLogPage> {
     );
   }
 
+  Future<void> _showManualEventDialog() async {
+    int selectedHour = 0;
+    int selectedMinute = 0;
+    int selectedSecond = 0;
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Log Manual Event'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextField(
+                    controller: _eventController,
+                    decoration: InputDecoration(
+                      labelText: 'Event Description',
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: DropdownButton<int>(
+                          value: selectedHour,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedHour = value!;
+                            });
+                          },
+                          items: List.generate(24, (index) => DropdownMenuItem(
+                            value: index,
+                            child: Text(index.toString().padLeft(2, '0')),
+                          )),
+                        ),
+                      ),
+                      Text(':'),
+                      Expanded(
+                        child: DropdownButton<int>(
+                          value: selectedMinute,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedMinute = value!;
+                            });
+                          },
+                          items: List.generate(60, (index) => DropdownMenuItem(
+                            value: index,
+                            child: Text(index.toString().padLeft(2, '0')),
+                          )),
+                        ),
+                      ),
+                      Text(':'),
+                      Expanded(
+                        child: DropdownButton<int>(
+                          value: selectedSecond,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedSecond = value!;
+                            });
+                          },
+                          items: List.generate(60, (index) => DropdownMenuItem(
+                            value: index,
+                            child: Text(index.toString().padLeft(2, '0')),
+                          )),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    String formattedTime = '${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')}:${selectedSecond.toString().padLeft(2, '0')}';
+                    _logEvent(_eventController.text.trim(), formattedTime);
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Log Event'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,10 +237,7 @@ class _EventLogPageState extends State<EventLogPage> {
             children: <Widget>[
               ElevatedButton(
                 onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => _buildManualEventDialog(),
-                  );
+                  _showManualEventDialog();
                 },
                 child: Text('Log Manual Event'),
               ),
@@ -160,51 +252,26 @@ class _EventLogPageState extends State<EventLogPage> {
     );
   }
 
-  Widget _buildManualEventDialog() {
-    TimeOfDay? selectedTime = TimeOfDay.now();
-
-    return AlertDialog(
-      title: Text('Log Manual Event'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          TextField(
-            controller: _eventController,
-            decoration: InputDecoration(
-              labelText: 'Event Description',
-            ),
-          ),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () async {
-              final pickedTime = await showTimePicker(
-                context: context,
-                initialTime: selectedTime ?? TimeOfDay.now(),
-              );
-
-              if (pickedTime != null) {
-                setState(() {
-                  selectedTime = pickedTime;
-                });
-
-                _logEvent(
-                  _eventController.text.trim(),
-                  '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}',
-                );
-
-                Navigator.pop(context);
-              }
-            },
-            child: Text('Select Time'),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _getCurrentTime() {
     final now = DateTime.now();
-    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+  }
+}
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Event Log App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: EventLogPage(),
+    );
   }
 }

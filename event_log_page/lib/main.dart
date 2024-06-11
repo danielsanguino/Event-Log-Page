@@ -3,6 +3,7 @@ import 'event_log_page.dart';
 
 void main() {
   runApp(MyApp());
+  
 }
 
 class MyApp extends StatelessWidget {
